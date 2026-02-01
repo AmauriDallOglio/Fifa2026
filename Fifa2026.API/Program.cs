@@ -1,4 +1,9 @@
 
+using Fifa2026.API.Configuracao;
+using Fifa2026.Infra.Contexto;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+
 namespace Fifa2026.API
 {
     public class Program
@@ -7,12 +12,20 @@ namespace Fifa2026.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            var configuration = new ConfigurationBuilder()
+            .SetBasePath(builder.Environment.ContentRootPath)
+            .AddJsonFile("appsettings.Development.json")
+            .Build();
+
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+
+            builder.Services.CarregaConexaoComBancoDeDados(configuration);
+
 
             var app = builder.Build();
 
@@ -21,6 +34,13 @@ namespace Fifa2026.API
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
+            }
+
+            // Executa migração automática ao iniciar
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<Fifa2026Contexto>();
+                db.Database.Migrate();
             }
 
             app.UseHttpsRedirection();
